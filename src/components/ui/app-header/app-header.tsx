@@ -5,17 +5,14 @@ import {
   Logo,
 } from '@krgaa/react-developer-burger-ui-components';
 import { clsx } from 'clsx';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useMatch } from 'react-router-dom';
 
 import type { TAppHeaderUIProps } from './type';
 
 import styles from './app-header.module.css';
 
 export const AppHeaderUI = ({ userName }: TAppHeaderUIProps): React.JSX.Element => {
-  const { pathname } = useLocation();
-  const isConstructor = pathname === '/' || pathname.startsWith('/ingredients/');
-  const isFeed = pathname === '/feed' || pathname.startsWith('/feed/');
-  const isProfile = pathname === '/profile' || pathname.startsWith('/profile/');
+  const ingredientMatch = useMatch('/ingredients/:id');
   return (
     <header className={styles.header}>
       <nav className={clsx(styles.menu, 'p-4')} aria-label="Основная навигация">
@@ -23,18 +20,34 @@ export const AppHeaderUI = ({ userName }: TAppHeaderUIProps): React.JSX.Element 
           <NavLink
             to="/"
             end
-            className={clsx(styles.link, isConstructor && styles.link_active)}
-            aria-current={isConstructor ? 'page' : undefined}
+            className={({ isActive }): string =>
+              clsx(
+                styles.link,
+                (isActive || Boolean(ingredientMatch)) && styles.link_active
+              )
+            }
           >
-            <BurgerIcon type={isConstructor ? 'primary' : 'secondary'} />
-            <p className="text text_type_main-default ml-2 mr-10">Конструктор</p>
+            {({ isActive }): React.JSX.Element => (
+              <>
+                <BurgerIcon
+                  type={isActive || Boolean(ingredientMatch) ? 'primary' : 'secondary'}
+                />
+                <p className="text text_type_main-default ml-2 mr-10">Конструктор</p>
+              </>
+            )}
           </NavLink>
           <NavLink
             to="/feed"
-            className={clsx(styles.link, isFeed && styles.link_active)}
+            className={({ isActive }): string =>
+              clsx(styles.link, isActive && styles.link_active)
+            }
           >
-            <ListIcon type={isFeed ? 'primary' : 'secondary'} />
-            <p className="text text_type_main-default ml-2">Лента заказов</p>
+            {({ isActive }): React.JSX.Element => (
+              <>
+                <ListIcon type={isActive ? 'primary' : 'secondary'} />
+                <p className="text text_type_main-default ml-2">Лента заказов</p>
+              </>
+            )}
           </NavLink>
         </div>
         <Link to="/" className={styles.logo} aria-label="Stellar Burgers — главная">
@@ -42,16 +55,18 @@ export const AppHeaderUI = ({ userName }: TAppHeaderUIProps): React.JSX.Element 
         </Link>
         <NavLink
           to="/profile"
-          className={clsx(
-            styles.link,
-            styles.link_position_last,
-            isProfile && styles.link_active
-          )}
+          className={({ isActive }): string =>
+            clsx(styles.link, styles.link_position_last, isActive && styles.link_active)
+          }
         >
-          <ProfileIcon type={isProfile ? 'primary' : 'secondary'} />
-          <p className="text text_type_main-default ml-2">
-            {userName ?? 'Личный кабинет'}
-          </p>
+          {({ isActive }): React.JSX.Element => (
+            <>
+              <ProfileIcon type={isActive ? 'primary' : 'secondary'} />
+              <p className="text text_type_main-default ml-2">
+                {userName ?? 'Личный кабинет'}
+              </p>
+            </>
+          )}
         </NavLink>
       </nav>
     </header>
