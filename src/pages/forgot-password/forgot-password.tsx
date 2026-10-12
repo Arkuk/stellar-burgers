@@ -1,29 +1,38 @@
-import { forgotPasswordApi } from '@api';
+import { selectUserError, selectUserLoading } from '@selectors';
+import { clearUserError, forgotPassword } from '@slices/userSlice';
 import { ForgotPasswordUI } from '@ui-pages';
-import { useState, type SyntheticEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+import { useDispatch, useSelector } from '@services/store';
+
+import type { SyntheticEvent } from 'react';
 
 export const ForgotPassword = (): React.JSX.Element => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState<Error | null>(null);
-
+  const dispatch = useDispatch();
+  const isLoading = useSelector(selectUserLoading);
+  const error = useSelector(selectUserError);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    dispatch(clearUserError());
+  }, [dispatch]);
 
   const handleSubmit = (e: SyntheticEvent): void => {
     e.preventDefault();
 
-    setError(null);
-    void forgotPasswordApi({ email })
-      .then(() => {
-        localStorage.setItem('resetPassword', 'true');
+    if (isLoading) return;
+    void dispatch(forgotPassword({ email })).then((action) => {
+      if (forgotPassword.fulfilled.match(action))
         void navigate('/reset-password', { replace: true });
-      })
-      .catch((err: Error) => setError(err));
+    });
   };
 
   return (
     <ForgotPasswordUI
-      errorText={error?.message}
+      errorText={error ?? undefined}
+      isLoading={isLoading}
       email={email}
       setEmail={setEmail}
       handleSubmit={handleSubmit}
