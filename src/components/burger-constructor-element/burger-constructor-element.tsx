@@ -1,5 +1,9 @@
+import { selectOrderRequest } from '@selectors';
+import { moveIngredient, removeIngredient } from '@slices/constructorSlice';
 import { BurgerConstructorElementUI } from '@ui';
 import { memo } from 'react';
+
+import { useDispatch, useSelector } from '@services/store';
 
 import type { BurgerConstructorElementProps } from './type';
 
@@ -8,16 +12,19 @@ export const BurgerConstructorElement = memo(function BurgerConstructorElement({
   index,
   totalItems,
 }: BurgerConstructorElementProps): React.JSX.Element {
+  const dispatch = useDispatch();
+  const isDisabled = useSelector(selectOrderRequest);
+
   const handleMoveDown = (): void => {
-    // TODO
+    if (!isDisabled) dispatch(moveIngredient({ id: ingredient.id, direction: 'down' }));
   };
 
   const handleMoveUp = (): void => {
-    // TODO
+    if (!isDisabled) dispatch(moveIngredient({ id: ingredient.id, direction: 'up' }));
   };
 
   const handleClose = (): void => {
-    // TODO
+    if (!isDisabled) dispatch(removeIngredient(ingredient.id));
   };
 
   return (
@@ -28,6 +35,7 @@ export const BurgerConstructorElement = memo(function BurgerConstructorElement({
       handleMoveUp={handleMoveUp}
       handleMoveDown={handleMoveDown}
       handleClose={handleClose}
+      isDisabled={isDisabled}
     />
   );
 });

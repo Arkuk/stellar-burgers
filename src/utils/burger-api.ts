@@ -33,14 +33,20 @@ type TRefreshResponse = TServerResponse<{
   accessToken: string;
 }>;
 
-export const refreshToken = (): Promise<TRefreshResponse> =>
-  fetch(`${URL}/auth/token`, {
+let pendingRefresh: { token: string; promise: Promise<TRefreshResponse> } | null = null;
+
+export const refreshToken = (): Promise<TRefreshResponse> => {
+  const token = localStorage.getItem('refreshToken');
+  if (!token) return Promise.reject(new Error('Необходимо войти в аккаунт.'));
+  if (pendingRefresh?.token === token) return pendingRefresh.promise;
+
+  const promise = fetch(`${URL}/auth/token`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json;charset=utf-8',
     },
     body: JSON.stringify({
-      token: localStorage.getItem('refreshToken'),
+      token,
     }),
   })
     .then((res) => checkResponse<TRefreshResponse>(res))
@@ -48,10 +54,20 @@ export const refreshToken = (): Promise<TRefreshResponse> =>
       if (!refreshData.success) {
         return Promise.reject(toApiError(refreshData));
       }
+      if (localStorage.getItem('refreshToken') !== token) {
+        throw new Error('Сессия изменилась. Повторите вход в аккаунт.');
+      }
       localStorage.setItem('refreshToken', refreshData.refreshToken);
       setCookie('accessToken', refreshData.accessToken);
       return refreshData;
+    })
+    .finally(() => {
+      if (pendingRefresh?.promise === promise) pendingRefresh = null;
     });
+
+  pendingRefresh = { token, promise };
+  return promise;
+};
 
 export const fetchWithRefresh = async <T>(
   url: RequestInfo,

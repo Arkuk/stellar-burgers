@@ -44,10 +44,7 @@ export type TConstructorState = {
   ingredients: TConstructorIngredient[];
 };
 
-export type TFeedState = {
-  orders: TOrder[];
-  total: number;
-  totalToday: number;
+export type TFeedState = TOrdersData & {
   isLoading: boolean;
-  error: unknown;
+  error: string | null;
 };
