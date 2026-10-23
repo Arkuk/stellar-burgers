@@ -17,9 +17,7 @@ export const ProtectedRoute = ({
   if (!isAuthChecked) return <Preloader />;
   if (onlyUnAuth && user) {
     const from = (location.state as { from?: Location } | null)?.from;
-    return (
-      <Navigate to={from ? `${from.pathname}${from.search}${from.hash}` : '/'} replace />
-    );
+    return <Navigate to={from ?? '/'} replace />;
   }
   if (!onlyUnAuth && !user)
     return <Navigate to="/login" state={{ from: location }} replace />;
