@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
       enabledMode: ['development'],
       esmExport: true
     }), tsconfigPaths()],
-    base: '',
+    base: '/',
     css: {
       modules: { generateScopedName }
     },
