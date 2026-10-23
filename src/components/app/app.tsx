@@ -14,7 +14,7 @@ import { fetchIngredients } from '@slices/ingredientsSlice';
 import { checkUserAuth } from '@slices/userSlice';
 import { clsx } from 'clsx';
 import { useEffect } from 'react';
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useDispatch } from '@services/store';
 
@@ -27,6 +27,16 @@ import '../../index.css';
 import styles from './app.module.css';
 
 type ModalLocationState = { background?: Location };
+
+const OrderModal = ({ onClose }: { onClose: () => void }): React.JSX.Element => {
+  const { number } = useParams<{ number: string }>();
+
+  return (
+    <Modal title={`#${number ?? ''}`} onClose={onClose}>
+      <OrderInfo />
+    </Modal>
+  );
+};
 
 const App = (): React.JSX.Element => {
   const dispatch = useDispatch();
@@ -55,11 +65,7 @@ const App = (): React.JSX.Element => {
       <OrderInfo />
     </main>
   );
-  const orderModal = (
-    <Modal title={`#${location.pathname.split('/').at(-1) ?? ''}`} onClose={closeModal}>
-      <OrderInfo />
-    </Modal>
-  );
+  const orderModal = <OrderModal onClose={closeModal} />;
 
   return (
     <div className={styles.app}>

@@ -2,8 +2,6 @@ import { getOrderByNumberApi, orderBurgerApi } from '@api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { getErrorMessage } from '../request-error';
-import { fetchFeed } from './feedSlice';
-import { fetchProfileOrders } from './profileOrdersSlice';
 import { logoutUser } from './userSlice';
 
 import type { AsyncThunkConfig, OrderState } from '../types';
@@ -23,13 +21,11 @@ const initialState: OrderState = {
 
 export const createOrder = createAsyncThunk<TOrder, string[], AsyncThunkConfig>(
   'order/create',
-  async (ingredients, { dispatch, getState, requestId, rejectWithValue }) => {
+  async (ingredients, { getState, requestId, rejectWithValue }) => {
     try {
       const response = await orderBurgerApi(ingredients);
       if (getState().order.requestId !== requestId || !getState().user.user)
         return rejectWithValue('Сессия завершена. Войдите в аккаунт ещё раз.');
-      void dispatch(fetchFeed());
-      void dispatch(fetchProfileOrders());
       return response.order;
     } catch (error) {
       return rejectWithValue(getErrorMessage(error));
