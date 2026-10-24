@@ -13,18 +13,18 @@ const bun = { id: 'bun-1', name: 'Космическая булка', price: 100
 const filling = { id: 'main-1', name: 'Говяжья котлета', price: 50 };
 const sauce = { id: 'sauce-1', name: 'Томатный соус', price: 25 };
 
-const ingredientCard = (page: Page, id: string): Locator =>
+const getIngredientCard = (page: Page, id: string): Locator =>
   page.getByRole('listitem').filter({
     has: page.locator(`a[href="/ingredients/${id}"]`),
   });
 
-const constructor = (page: Page): Locator =>
+const getBurgerConstructor = (page: Page): Locator =>
   page.locator('section').filter({
     has: page.getByRole('button', { name: 'Оформить заказ', exact: true }),
   });
 
 const addIngredient = async (page: Page, id: string): Promise<void> => {
-  await ingredientCard(page, id)
+  await getIngredientCard(page, id)
     .getByRole('button', { name: 'Добавить', exact: true })
     .click();
 };
@@ -55,7 +55,33 @@ test.describe('Конструктор бургеров', () => {
     page,
   }) => {
     await page.goto('/');
-    const burgerConstructor = constructor(page);
+    const burgerConstructor = getBurgerConstructor(page);
+
+    for (const ingredient of [bun, filling, sauce]) {
+      await expect(getIngredientCard(page, ingredient.id)).toBeVisible();
+    }
+
+    await expect(
+      burgerConstructor.getByText('Выберите булки', { exact: true })
+    ).toHaveCount(2);
+    await expect(
+      burgerConstructor.getByText('Выберите начинку', { exact: true })
+    ).toBeVisible();
+
+    for (const name of [
+      `${bun.name} (верх)`,
+      `${bun.name} (низ)`,
+      filling.name,
+      sauce.name,
+    ]) {
+      await expect(burgerConstructor.getByText(name, { exact: true })).toHaveCount(0);
+    }
+
+    for (const ingredient of [bun, filling, sauce]) {
+      await expect(
+        getIngredientCard(page, ingredient.id).locator('.counter__num')
+      ).toHaveCount(0);
+    }
 
     await expect(
       burgerConstructor.getByRole('button', { name: 'Оформить заказ', exact: true })
@@ -75,13 +101,13 @@ test.describe('Конструктор бургеров', () => {
     );
     await expect(burgerConstructor.getByText(sauce.name, { exact: true })).toBeVisible();
     await expect(
-      ingredientCard(page, bun.id).getByText('2', { exact: true })
+      getIngredientCard(page, bun.id).getByText('2', { exact: true })
     ).toBeVisible();
     await expect(
-      ingredientCard(page, filling.id).getByText('2', { exact: true })
+      getIngredientCard(page, filling.id).getByText('2', { exact: true })
     ).toBeVisible();
     await expect(
-      ingredientCard(page, sauce.id).getByText('1', { exact: true })
+      getIngredientCard(page, sauce.id).getByText('1', { exact: true })
     ).toBeVisible();
     await expect(
       burgerConstructor.getByText(
@@ -95,9 +121,14 @@ test.describe('Конструктор бургеров', () => {
     page,
   }) => {
     await page.goto('/');
-    await ingredientCard(page, bun.id).getByRole('link').click();
+    const dialog = page.getByRole('dialog', {
+      name: 'Детали ингредиента',
+      includeHidden: true,
+    });
+    await expect(getIngredientCard(page, bun.id)).toBeVisible();
+    await expect(dialog).toHaveCount(0);
+    await getIngredientCard(page, bun.id).getByRole('link').click();
 
-    const dialog = page.getByRole('dialog', { name: 'Детали ингредиента' });
     await expect(page).toHaveURL(/\/ingredients\/bun-1$/);
     await expect(
       dialog.getByRole('heading', { name: bun.name, exact: true })
@@ -127,9 +158,14 @@ test.describe('Конструктор бургеров', () => {
 
   test('закрывает окно ингредиента кликом по оверлею', async ({ page }) => {
     await page.goto('/');
-    await ingredientCard(page, filling.id).getByRole('link').click();
+    const dialog = page.getByRole('dialog', {
+      name: 'Детали ингредиента',
+      includeHidden: true,
+    });
+    await expect(getIngredientCard(page, filling.id)).toBeVisible();
+    await expect(dialog).toHaveCount(0);
+    await getIngredientCard(page, filling.id).getByRole('link').click();
 
-    const dialog = page.getByRole('dialog', { name: 'Детали ингредиента' });
     await expect(dialog).toBeVisible();
     await expect(
       dialog.getByRole('heading', { name: filling.name, exact: true })
@@ -169,6 +205,12 @@ test.describe('Конструктор бургеров', () => {
     ).toBeVisible();
     await assembleBurger(page);
 
+    const dialog = page.getByRole('dialog', {
+      name: 'Информация о заказе',
+      includeHidden: true,
+    });
+    await expect(dialog).toHaveCount(0);
+
     const orderRequest = page.waitForRequest(
       (request) => request.url() === `${apiURL}/orders` && request.method() === 'POST'
     );
@@ -185,7 +227,6 @@ test.describe('Конструктор бургеров', () => {
     expect(request.headers().authorization).toBe(accessToken);
     expect((await orderResponse).status()).toBe(200);
 
-    const dialog = page.getByRole('dialog', { name: 'Информация о заказе' });
     await expect(
       dialog.getByRole('heading', { name: '123456', exact: true })
     ).toBeVisible();
@@ -193,7 +234,7 @@ test.describe('Конструктор бургеров', () => {
       dialog.getByText('Ваш заказ начали готовить', { exact: true })
     ).toBeVisible();
 
-    const burgerConstructor = constructor(page);
+    const burgerConstructor = getBurgerConstructor(page);
     await expect(
       burgerConstructor.getByText('Выберите булки', { exact: true })
     ).toHaveCount(2);
