@@ -23,11 +23,12 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: [['list'], ['html', { open: 'never' }]],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:4000',
+    baseURL: 'http://127.0.0.1:4001',
+    serviceWorkers: 'block',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -73,8 +74,12 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run start',
-    url: 'http://localhost:4000',
-    reuseExistingServer: !process.env.CI,
-  }
+    command:
+      'node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4001 --strictPort --no-open',
+    url: 'http://127.0.0.1:4001',
+    env: {
+      BURGER_API_URL: 'https://norma.ffapi.ru/api',
+    },
+    reuseExistingServer: false,
+  },
 });
